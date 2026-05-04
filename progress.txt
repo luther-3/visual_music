@@ -2,7 +2,7 @@
 音乐可视化工具 - 项目进度追踪
 ================================================================
 
-最后更新：2026-05-04（第1步 config.py 完成）
+最后更新：2026-05-04（第2步 utils.py 完成）
 
 ----------------------------------------------------------------
 已完成
@@ -45,6 +45,14 @@
   - 中频粒子配置已补充 `orbit_centers`
   - 验证通过：`python -c "import config; print(config.WINDOW_WIDTH)"` 输出 `1280`
 
+- 第 2 步：utils.py 已完成
+  - 完成函数：`interpolate_color()`、`map_value()`、`freq_to_bin()`、`normalize_energy()`
+  - `normalize_energy` 已按规范改为：`np.clip(energy / local_max, 0, 1) if local_max > 0 else 0`
+  - `map_value` 增加输入范围保护：`in_min == in_max` 时返回 `out_min`
+  - 验证通过：
+    - `python -c "from utils import interpolate_color; print(interpolate_color((0,0,0),(255,255,255),0.5))"` 输出 `(127, 127, 127)`
+    - `python -c "from utils import map_value, freq_to_bin, normalize_energy; print(round(map_value(5,0,10,0,100),2), freq_to_bin(4000,22050,2048), normalize_energy(3,6))"` 输出 `50.0 371 0.5`
+
 ----------------------------------------------------------------
 进行中
 ----------------------------------------------------------------
@@ -65,7 +73,7 @@
 [x] 第 1 步：实现 config.py
     - 定义所有配置参数（已完成并验证通过）
 
-[ ] 第 2 步：实现 utils.py
+[x] 第 2 步：实现 utils.py
     - interpolate_color()
     - map_value()
     - freq_to_bin()

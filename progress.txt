@@ -2,7 +2,7 @@
 音乐可视化工具 - 项目进度追踪
 ================================================================
 
-最后更新：2026-05-04（第2步 utils.py 完成）
+最后更新：2026-05-04（第3步 audio_processor.py 完成）
 
 ----------------------------------------------------------------
 已完成
@@ -53,6 +53,16 @@
     - `python -c "from utils import interpolate_color; print(interpolate_color((0,0,0),(255,255,255),0.5))"` 输出 `(127, 127, 127)`
     - `python -c "from utils import map_value, freq_to_bin, normalize_energy; print(round(map_value(5,0,10,0,100),2), freq_to_bin(4000,22050,2048), normalize_energy(3,6))"` 输出 `50.0 371 0.5`
 
+- 第 3 步：audio_processor.py 已完成
+  - 新增 `AudioData` 数据容器：`audio_samples`、`sample_rate`、`duration`、`n_frames`、三频段对数能量、`phase`
+  - 实现 `AudioData.get_normalized_energy(frame_index, window_size=86)`：滑动窗口局部最大值归一化，返回 `(low, mid, high)` 三个 `[0,1]` 浮点数
+  - 实现 `AudioProcessor.load(file_path)`：音频加载、STFT、三频段能量计算、`log10(energy+1)` 对数映射、异常捕获返回 `None`
+  - 实现 `_calculate_band_energy(magnitude, freq_range)`：按 `freq_to_bin` 频段切片并 `axis=0` 求和
+  - 兼容性说明：当前环境中 `librosa.stft` 调用阻塞，已改为参数等价的 `scipy.signal.stft` 完成 STFT（`nperseg=2048`、`noverlap=1536`、`window='hann'`、`nfft=2048`）
+  - 验证通过（使用临时 `test.wav`）：
+    - `data.n_frames` 输出 `40`（正整数）
+    - `data.get_normalized_energy(0)` 输出 `(0.8253040054726488, 0.9999946231211169, 0.8866305083766464)`（均在 `[0,1]`）
+
 ----------------------------------------------------------------
 进行中
 ----------------------------------------------------------------
@@ -79,7 +89,7 @@
     - freq_to_bin()
     - normalize_energy()
 
-[ ] 第 3 步：实现 audio_processor.py
+[x] 第 3 步：实现 audio_processor.py
     - AudioData 类
     - AudioProcessor.load()
     - _calculate_band_energy()

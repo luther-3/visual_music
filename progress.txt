@@ -2,7 +2,7 @@
 音乐可视化工具 - 项目进度追踪
 ================================================================
 
-最后更新：2026-05-04（第4步 particle_system.py 完成）
+最后更新：2026-05-04（第5步 visualizer.py 完成）
 
 ----------------------------------------------------------------
 已完成
@@ -75,6 +75,18 @@
     - `python -c "from particle_system import ParticleSystem; ps=ParticleSystem(); ps.update(0.8,0.5,0.3); print(len(ps.get_particles_to_render()))"` 输出 `270`
     - `python -c "from particle_system import ParticleSystem; ps=ParticleSystem(); ps.set_display_mode('low'); ps.update(1.0,1.0,1.0); print(len(ps.low_emitter.particles), len(ps.mid_emitter.particles), len(ps.high_emitter.particles), len(ps.get_particles_to_render()))"` 输出 `100 179 300 100`
 
+- 第 5 步：visualizer.py 已完成
+  - 新增 `Visualizer` 类：
+    - `__init__()`：初始化 `pygame`、窗口、`mixer`、`ParticleSystem`、状态变量、时钟与字体
+    - `run(audio_data, audio_file_path)`：加载并播放音频，执行主循环
+    - `_handle_events()`：支持 `ESC` 退出、`SPACE` 暂停/继续、`1/2/3/A` 显示模式切换
+    - `_get_current_frame()`：按 `get_pos()` 转换帧索引并做边界保护
+    - `_render()`：拖尾背景 + 粒子渲染 + 信息层（FPS/时间/模式）
+    - `cleanup()`：`pygame.mixer.music.stop()` 和 `pygame.quit()`
+  - 验证通过（当前环境使用 SDL dummy 驱动做无界面验证）：
+    - 初始化验证输出：`init_ok all False`
+    - 渲染路径验证输出：`render_ok 270`
+
 ----------------------------------------------------------------
 进行中
 ----------------------------------------------------------------
@@ -112,7 +124,7 @@
     - ParticleEmitter 类
     - ParticleSystem 类
 
-[ ] 第 5 步：实现 visualizer.py
+[x] 第 5 步：实现 visualizer.py
     - Visualizer 类
     - 主循环、事件处理、渲染
 

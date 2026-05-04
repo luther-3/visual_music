@@ -1,5 +1,7 @@
-numpy>=1.21.0
-librosa>=0.9.0
-pygame>=2.1.0
-scipy>=1.7.0
-matplotlib>=3.4.0
+numpy==2.2.5
+librosa==0.11.0
+pygame==2.6.1
+scipy==1.15.3
+soundfile==0.13.1
+audioread==3.0.1
+matplotlib==3.10.3

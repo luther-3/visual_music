@@ -29,13 +29,17 @@ class Visualizer:
         self.font = pygame.font.SysFont(None, 24)
 
         self._last_audio_data = None
+        self._audio_file_path = None
+        self.playback_finished = False
 
     def run(self, audio_data, audio_file_path: str):
         self._last_audio_data = audio_data
+        self._audio_file_path = audio_file_path
         self.particle_system.clear_all()
         self.is_paused = False
+        self.playback_finished = False
 
-        pygame.mixer.music.load(audio_file_path)
+        pygame.mixer.music.load(self._audio_file_path)
         pygame.mixer.music.play()
 
         while True:
@@ -43,9 +47,9 @@ class Visualizer:
                 break
 
             if not pygame.mixer.music.get_busy() and not self.is_paused:
-                break
+                self.playback_finished = True
 
-            if not self.is_paused:
+            if not self.is_paused and not self.playback_finished:
                 frame_index = self._get_current_frame(audio_data)
                 low, mid, high = audio_data.get_normalized_energy(frame_index)
                 self.particle_system.update(low, mid, high)
@@ -64,11 +68,15 @@ class Visualizer:
                 if event.key == pygame.K_ESCAPE:
                     return False
                 if event.key == pygame.K_SPACE:
+                    if self.playback_finished:
+                        continue
                     if self.is_paused:
                         pygame.mixer.music.unpause()
                     else:
                         pygame.mixer.music.pause()
                     self.is_paused = not self.is_paused
+                elif event.key == pygame.K_r:
+                    self._restart_playback()
                 elif event.key == pygame.K_1:
                     self.display_mode = "low"
                     self.particle_system.set_display_mode("low")
@@ -90,6 +98,15 @@ class Visualizer:
         if frame_index < 0:
             return 0
         return min(frame_index, audio_data.n_frames - 1)
+
+    def _restart_playback(self):
+        if not self._audio_file_path:
+            return
+        self.particle_system.clear_all()
+        self.is_paused = False
+        self.playback_finished = False
+        pygame.mixer.music.load(self._audio_file_path)
+        pygame.mixer.music.play()
 
     def _render(self, particles):
         trail_surface = pygame.Surface((WINDOW_WIDTH, WINDOW_HEIGHT), pygame.SRCALPHA)
@@ -118,10 +135,15 @@ class Visualizer:
             f"Time: {current_sec:.1f}s / {duration_sec:.1f}s", True, (220, 220, 220)
         )
         mode_text = self.font.render(f"Mode: {self.display_mode}", True, (220, 220, 220))
+        hint_text = self.font.render("ESC: 退出  SPACE: 暂停  R: 重播", True, (220, 220, 220))
+        status = "播放结束，按 R 重播" if self.playback_finished else "播放中"
+        status_text = self.font.render(f"Status: {status}", True, (220, 220, 220))
 
         self.screen.blit(fps_text, (10, 10))
         self.screen.blit(time_text, (10, 35))
         self.screen.blit(mode_text, (10, 60))
+        self.screen.blit(status_text, (10, 85))
+        self.screen.blit(hint_text, (10, 110))
 
     def cleanup(self):
         pygame.mixer.music.stop()

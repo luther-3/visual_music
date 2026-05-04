@@ -1,0 +1,93 @@
+================================================================
+音乐可视化工具 - 项目进度追踪
+================================================================
+
+最后更新：2026-05-04（文档 review 修复阶段，第三轮）
+
+----------------------------------------------------------------
+已完成
+----------------------------------------------------------------
+
+[规划阶段]
+- 完成产品需求讨论（Ask_Why 深度审问，4 轮，15 个核心决策）
+- 生成规范文档：
+  - docs/PRD.md               产品需求文档
+  - docs/APP_FLOW.md          应用流程文档
+  - docs/TECH_STACK.md        技术栈文档（所有依赖锁定版本）
+  - docs/FRONTEND_GUIDELINES.md  前端设计指南
+  - docs/BACKEND_STRUCTURE.md    后端架构文档
+  - docs/IMPLEMENTATION_PLAN.md  实现计划（7 步构建序列）
+
+[文档修复 - 第一轮 review]
+- 高频上限 20000Hz → 11025Hz（奈奎斯特频率，4 个文档同步修复）
+- APP_FLOW.md "全屏或固定大小" → 统一为固定 1280x720
+- PRD.md 配置文件描述措辞统一
+- 错误处理策略：APP_FLOW.md 改为"返回文件选择界面"
+
+[文档修复 - 第三轮 review]
+- IMPLEMENTATION_PLAN.md main() 中 `if audio_data is None: break` → `continue`（break 会退出程序，continue 才会返回文件选择）
+- APP_FLOW.md 状态图补充"音频加载失败 → 文件选择"分支，与正文行为一致
+- BACKEND_STRUCTURE.md + IMPLEMENTATION_PLAN.md 错误处理统一为"返回 None，不退出程序"
+- end_bin off-by-one 修复：切片上界统一为 freq_to_bin(freq_max) + 1（APP_FLOW.md、BACKEND_STRUCTURE.md）
+- APP_FLOW.md 能量求和公式补充 axis=0
+
+----------------------------------------------------------------
+进行中
+----------------------------------------------------------------
+
+（无）
+
+----------------------------------------------------------------
+接下来（按顺序）
+----------------------------------------------------------------
+
+[ ] 第 0 步：环境准备
+    - 更新 requirements.txt（锁定版本号）
+    - 创建 verify_installation.py
+    - 安装依赖，运行验证脚本确认全部通过
+
+[ ] 第 1 步：实现 config.py
+    - 定义所有配置参数
+
+[ ] 第 2 步：实现 utils.py
+    - interpolate_color()
+    - map_value()
+    - freq_to_bin()
+    - normalize_energy()
+
+[ ] 第 3 步：实现 audio_processor.py
+    - AudioData 类
+    - AudioProcessor.load()
+    - _calculate_band_energy()
+    - get_normalized_energy()
+
+[ ] 第 4 步：实现 particle_system.py
+    - Particle 类（低/中/高频各自的 update 逻辑）
+    - ParticleEmitter 类
+    - ParticleSystem 类
+
+[ ] 第 5 步：实现 visualizer.py
+    - Visualizer 类
+    - 主循环、事件处理、渲染
+
+[ ] 第 6 步：实现 main.py
+    - 文件选择（tkinter）
+    - 串联完整流程
+
+[ ] 第 7 步：集成测试与效果调优
+    - 用 WAV 文件测试完整流程
+    - 用 MP3 文件测试
+    - 调整 config.py 参数优化视觉效果
+    - 验证所有键盘交互正常
+
+----------------------------------------------------------------
+已知风险和注意事项
+----------------------------------------------------------------
+
+- tkinter 和 Pygame 窗口不能同时显示，切换前必须 root.destroy()
+- Pygame per-pixel alpha 渲染需要 pygame.SRCALPHA 标志
+- MP3 支持需要 FFmpeg，先用 WAV 测试
+- pygame.mixer.music.get_pos() 暂停后继续计时，暂停逻辑需特别处理
+- 粒子总数超过 3000 时停止发射新粒子
+
+================================================================

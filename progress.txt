@@ -2,7 +2,7 @@
 音乐可视化工具 - 项目进度追踪
 ================================================================
 
-最后更新：2026-05-04（第3步 audio_processor.py 完成）
+最后更新：2026-05-04（第4步 particle_system.py 完成）
 
 ----------------------------------------------------------------
 已完成
@@ -63,6 +63,18 @@
     - `data.n_frames` 输出 `40`（正整数）
     - `data.get_normalized_energy(0)` 输出 `(0.8253040054726488, 0.9999946231211169, 0.8866305083766464)`（均在 `[0,1]`）
 
+- 第 4 步：particle_system.py 已完成
+  - 新增 `Particle` 类：实现低/中/高频三种 `update()` 逻辑、`is_alive()`、`is_out_of_bounds()`
+  - 新增 `ParticleEmitter` 类：支持按能量发射粒子、分类型初始化参数、更新并清理越界/死亡粒子
+  - 新增 `ParticleSystem` 类：三发射器组合、`display_mode` 切换、`MAX_PARTICLES` 总量限制、清空接口
+  - 关键行为对齐规范：
+    - 低频：中心爆发径向运动
+    - 中频：按 `orbit_centers` 环绕运动
+    - 高频：随机游走并方向扰动
+  - 验证通过：
+    - `python -c "from particle_system import ParticleSystem; ps=ParticleSystem(); ps.update(0.8,0.5,0.3); print(len(ps.get_particles_to_render()))"` 输出 `270`
+    - `python -c "from particle_system import ParticleSystem; ps=ParticleSystem(); ps.set_display_mode('low'); ps.update(1.0,1.0,1.0); print(len(ps.low_emitter.particles), len(ps.mid_emitter.particles), len(ps.high_emitter.particles), len(ps.get_particles_to_render()))"` 输出 `100 179 300 100`
+
 ----------------------------------------------------------------
 进行中
 ----------------------------------------------------------------
@@ -95,7 +107,7 @@
     - _calculate_band_energy()
     - get_normalized_energy()
 
-[ ] 第 4 步：实现 particle_system.py
+[x] 第 4 步：实现 particle_system.py
     - Particle 类（低/中/高频各自的 update 逻辑）
     - ParticleEmitter 类
     - ParticleSystem 类

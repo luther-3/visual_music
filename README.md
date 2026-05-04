@@ -21,13 +21,9 @@ pip install -r requirements.txt
 ## 使用方法
 
 ```bash
-python main.py <音频文件路径>
+python main.py
 ```
-
-示例：
-```bash
-python main.py assets/sample_music.mp3
-```
+运行后会弹出系统文件选择对话框，选择 `.mp3/.wav/.flac/.ogg` 音频文件即可开始可视化。
 
 ## 项目结构
 

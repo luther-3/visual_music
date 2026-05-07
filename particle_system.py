@@ -70,16 +70,23 @@ class ParticleEmitter:
         self.config = config
         self.particles: List[Particle] = []
 
-    def emit(self, normalized_energy: float):
+    def emit(self, normalized_energy: float, transient_boost: float = 0.0, contrast_mode: bool = True):
         normalized_energy = max(0.0, min(1.0, normalized_energy))
-        num = int(normalized_energy * self.config["max_count"])
+        shaped_energy = normalized_energy
+        if contrast_mode:
+            shaped_energy = normalized_energy**1.8
+            shaped_energy = min(1.0, shaped_energy + transient_boost * 0.8)
+
+        num = int(shaped_energy * self.config["max_count"])
+        if contrast_mode and transient_boost > 0:
+            num += int(transient_boost * self.config["max_count"] * 0.35)
         if num <= 0:
             return
 
         for _ in range(num):
-            self.particles.append(self._create_particle(normalized_energy))
+            self.particles.append(self._create_particle(normalized_energy, contrast_mode))
 
-    def _create_particle(self, normalized_energy: float) -> Particle:
+    def _create_particle(self, normalized_energy: float, contrast_mode: bool) -> Particle:
         size_min, size_max = self.config["size_range"]
         life_min, life_max = self.config["lifetime_range"]
         color = interpolate_color(
@@ -87,10 +94,13 @@ class ParticleEmitter:
         )
         size = random.uniform(size_min, size_max)
         lifetime = random.randint(life_min, life_max)
+        contrast_gain = 1.0 + (normalized_energy * 0.6 if contrast_mode else 0.0)
 
         if self.emitter_type == "low":
             angle = random.uniform(0, 2 * math.pi)
-            speed = 2 + normalized_energy * 6
+            speed = (2 + normalized_energy * 6) * contrast_gain
+            if contrast_mode:
+                size *= 1.2
             return Particle(
                 x=WINDOW_WIDTH / 2,
                 y=WINDOW_HEIGHT / 2,
@@ -108,8 +118,10 @@ class ParticleEmitter:
         if self.emitter_type == "mid":
             center_x, center_y = random.choice(self.config["orbit_centers"])
             angle = random.uniform(0, 2 * math.pi)
-            radius = 50 + normalized_energy * 150
-            angular_speed = 0.05 + normalized_energy * 0.05
+            radius = 50 + normalized_energy * (220 if contrast_mode else 150)
+            angular_speed = 0.05 + normalized_energy * (0.09 if contrast_mode else 0.05)
+            if contrast_mode:
+                size *= 1.1
             x = center_x + radius * math.cos(angle)
             y = center_y + radius * math.sin(angle)
             return Particle(
@@ -132,7 +144,9 @@ class ParticleEmitter:
             )
 
         angle = random.uniform(0, 2 * math.pi)
-        speed = 0.5 + normalized_energy * 2.5
+        speed = 0.5 + normalized_energy * (4.0 if contrast_mode else 2.5)
+        if contrast_mode:
+            lifetime = max(10, int(lifetime * 0.8))
         return Particle(
             x=random.uniform(0, WINDOW_WIDTH),
             y=random.uniform(0, WINDOW_HEIGHT),
@@ -171,6 +185,10 @@ class ParticleSystem:
         self.mid_emitter = ParticleEmitter("mid", MID_FREQ_PARTICLE_CONFIG)
         self.high_emitter = ParticleEmitter("high", HIGH_FREQ_PARTICLE_CONFIG)
         self.display_mode = "all"
+        self.contrast_mode = True
+        self._prev_low = 0.0
+        self._prev_mid = 0.0
+        self._prev_high = 0.0
 
     def update(self, low_energy: float, mid_energy: float, high_energy: float):
         total_particles = (
@@ -179,10 +197,17 @@ class ParticleSystem:
             + len(self.high_emitter.particles)
         )
 
+        low_delta = max(0.0, low_energy - self._prev_low)
+        mid_delta = max(0.0, mid_energy - self._prev_mid)
+        high_delta = max(0.0, high_energy - self._prev_high)
+        self._prev_low = low_energy
+        self._prev_mid = mid_energy
+        self._prev_high = high_energy
+
         if total_particles < MAX_PARTICLES:
-            self.low_emitter.emit(low_energy)
-            self.mid_emitter.emit(mid_energy)
-            self.high_emitter.emit(high_energy)
+            self.low_emitter.emit(low_energy, low_delta, self.contrast_mode)
+            self.mid_emitter.emit(mid_energy, mid_delta, self.contrast_mode)
+            self.high_emitter.emit(high_energy, high_delta, self.contrast_mode)
 
         self.low_emitter.update_particles()
         self.mid_emitter.update_particles()
@@ -205,7 +230,13 @@ class ParticleSystem:
         if mode in {"all", "low", "mid", "high"}:
             self.display_mode = mode
 
+    def set_contrast_mode(self, enabled: bool):
+        self.contrast_mode = enabled
+
     def clear_all(self):
         self.low_emitter.clear()
         self.mid_emitter.clear()
         self.high_emitter.clear()
+        self._prev_low = 0.0
+        self._prev_mid = 0.0
+        self._prev_high = 0.0

@@ -27,6 +27,7 @@ class Visualizer:
         self.display_mode = "all"
         self.clock = pygame.time.Clock()
         self.font = pygame.font.SysFont(None, 24)
+        self.contrast_mode = True
 
         self._last_audio_data = None
         self._audio_file_path = None
@@ -89,6 +90,9 @@ class Visualizer:
                 elif event.key == pygame.K_a:
                     self.display_mode = "all"
                     self.particle_system.set_display_mode("all")
+                elif event.key == pygame.K_c:
+                    self.contrast_mode = not self.contrast_mode
+                    self.particle_system.set_contrast_mode(self.contrast_mode)
 
         return True
 
@@ -135,15 +139,21 @@ class Visualizer:
             f"Time: {current_sec:.1f}s / {duration_sec:.1f}s", True, (220, 220, 220)
         )
         mode_text = self.font.render(f"Mode: {self.display_mode}", True, (220, 220, 220))
-        hint_text = self.font.render("ESC: 退出  SPACE: 暂停  R: 重播", True, (220, 220, 220))
+        hint_text = self.font.render(
+            "ESC: 退出  SPACE: 暂停  R: 重播  C: 对比模式", True, (220, 220, 220)
+        )
         status = "播放结束，按 R 重播" if self.playback_finished else "播放中"
         status_text = self.font.render(f"Status: {status}", True, (220, 220, 220))
+        contrast_text = self.font.render(
+            f"Contrast: {'ON' if self.contrast_mode else 'OFF'}", True, (220, 220, 220)
+        )
 
         self.screen.blit(fps_text, (10, 10))
         self.screen.blit(time_text, (10, 35))
         self.screen.blit(mode_text, (10, 60))
         self.screen.blit(status_text, (10, 85))
-        self.screen.blit(hint_text, (10, 110))
+        self.screen.blit(contrast_text, (10, 110))
+        self.screen.blit(hint_text, (10, 135))
 
     def cleanup(self):
         pygame.mixer.music.stop()

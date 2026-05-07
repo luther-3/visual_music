@@ -1,11 +1,13 @@
 ﻿"""Audio loading and spectral feature extraction."""
 
+import subprocess
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Optional, Tuple
 
 import numpy as np
 import soundfile as sf
-from scipy.signal import stft as scipy_stft
+from scipy.signal import resample_poly, stft as scipy_stft
 
 from config import (
     HIGH_FREQ_RANGE,
@@ -57,7 +59,7 @@ class AudioProcessor:
     def load(file_path: str) -> Optional[AudioData]:
         try:
             print("正在加载音频文件...")
-            audio_samples, source_sr = sf.read(file_path, always_2d=False)
+            audio_samples, source_sr, used_path = AudioProcessor._read_audio_with_fallback(file_path)
 
             if isinstance(audio_samples, np.ndarray) and audio_samples.ndim > 1:
                 audio_samples = np.mean(audio_samples, axis=1)
@@ -65,10 +67,12 @@ class AudioProcessor:
             audio_samples = np.asarray(audio_samples, dtype=np.float32)
 
             if source_sr != SAMPLE_RATE:
-                raise ValueError(
-                    f"当前实现要求采样率为 {SAMPLE_RATE}，实际为 {source_sr}。"
-                    "请先用目标采样率导出音频。"
-                )
+                print(f"检测到采样率 {source_sr}，正在自动重采样到 {SAMPLE_RATE}...")
+                gcd = int(np.gcd(source_sr, SAMPLE_RATE))
+                up = SAMPLE_RATE // gcd
+                down = source_sr // gcd
+                audio_samples = resample_poly(audio_samples, up, down).astype(np.float32)
+                source_sr = SAMPLE_RATE
 
             print("正在处理音频数据...")
             _, _, stft_matrix = scipy_stft(
@@ -95,6 +99,8 @@ class AudioProcessor:
             duration = float(len(audio_samples) / SAMPLE_RATE)
             n_frames = int(magnitude.shape[1])
 
+            if used_path != file_path:
+                print(f"已自动转换文件：{used_path}")
             print("完成！")
             return AudioData(
                 audio_samples=audio_samples,
@@ -109,6 +115,44 @@ class AudioProcessor:
         except Exception as exc:
             print(f"错误：无法加载音频文件。{exc}")
             return None
+
+    @staticmethod
+    def _read_audio_with_fallback(file_path: str):
+        try:
+            audio_samples, source_sr = sf.read(file_path, always_2d=False)
+            return audio_samples, source_sr, file_path
+        except Exception as read_exc:
+            path = Path(file_path)
+            if path.suffix.lower() != ".mp3":
+                raise read_exc
+
+            wav_path = path.with_suffix(".wav")
+            AudioProcessor._convert_mp3_to_wav_ffmpeg(path, wav_path)
+            audio_samples, source_sr = sf.read(str(wav_path), always_2d=False)
+            return audio_samples, source_sr, str(wav_path)
+
+    @staticmethod
+    def _convert_mp3_to_wav_ffmpeg(mp3_path: Path, wav_path: Path):
+        cmd = [
+            "ffmpeg",
+            "-y",
+            "-i",
+            str(mp3_path),
+            "-ar",
+            str(SAMPLE_RATE),
+            "-ac",
+            "1",
+            str(wav_path),
+        ]
+        try:
+            subprocess.run(cmd, check=True, capture_output=True, text=True)
+        except FileNotFoundError as exc:
+            raise RuntimeError(
+                "未找到 ffmpeg。请先安装 ffmpeg 并确保当前终端可执行 ffmpeg 命令。"
+            ) from exc
+        except subprocess.CalledProcessError as exc:
+            stderr = (exc.stderr or "").strip()
+            raise RuntimeError(f"ffmpeg 转换 mp3 失败：{stderr}") from exc
 
     @staticmethod
     def _calculate_band_energy(magnitude: np.ndarray, freq_range: Tuple[int, int]) -> np.ndarray:

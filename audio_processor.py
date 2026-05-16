@@ -5,6 +5,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Optional, Tuple
 
+import matplotlib.pyplot as plt
 import numpy as np
 import soundfile as sf
 from scipy.signal import resample_poly, stft as scipy_stft
@@ -91,6 +92,7 @@ class AudioProcessor:
             low_energy = AudioProcessor._calculate_band_energy(magnitude, LOW_FREQ_RANGE)
             mid_energy = AudioProcessor._calculate_band_energy(magnitude, MID_FREQ_RANGE)
             high_energy = AudioProcessor._calculate_band_energy(magnitude, HIGH_FREQ_RANGE)
+            AudioProcessor._export_band_energy_timeseries(file_path, low_energy, mid_energy, high_energy)
 
             low_log_energy = np.log10(low_energy + 1)
             mid_log_energy = np.log10(mid_energy + 1)
@@ -160,3 +162,27 @@ class AudioProcessor:
         start_bin = freq_to_bin(start_freq, SAMPLE_RATE, N_FFT)
         end_bin = freq_to_bin(end_freq, SAMPLE_RATE, N_FFT) + 1
         return np.sum(magnitude[start_bin:end_bin, :], axis=0)
+
+    @staticmethod
+    def _export_band_energy_timeseries(
+        file_path: str, low_energy: np.ndarray, mid_energy: np.ndarray, high_energy: np.ndarray
+    ):
+        out_dir = Path("visual_spectrum")
+        out_dir.mkdir(parents=True, exist_ok=True)
+
+        audio_name = Path(file_path).stem
+        out_path = out_dir / f"{audio_name}_band_energy_timeseries.png"
+        frame_idx = np.arange(len(low_energy))
+
+        plt.figure(figsize=(12, 5))
+        plt.plot(frame_idx, low_energy, label="Low Band Energy (20-250Hz)", color="#ff7043", linewidth=1.2)
+        plt.plot(frame_idx, mid_energy, label="Mid Band Energy (250-4000Hz)", color="#29b6f6", linewidth=1.2)
+        plt.plot(frame_idx, high_energy, label="High Band Energy (4000-11025Hz)", color="#ffee58", linewidth=1.2)
+        plt.title(f"{audio_name} - Band Energy Time Series")
+        plt.xlabel("Time Frame")
+        plt.ylabel("Energy")
+        plt.legend(loc="upper right")
+        plt.grid(alpha=0.25)
+        plt.tight_layout()
+        plt.savefig(out_path, dpi=200)
+        plt.close()

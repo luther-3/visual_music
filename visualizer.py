@@ -34,6 +34,12 @@ class Visualizer:
         self._last_audio_data = None
         self._audio_file_path = None
         self.playback_finished = False
+        self._prev_total_energy = 0.0
+        self._pulse_frames_left = 0
+        self._pulse_strength = 0.0
+        self._current_low = 0.0
+        self._current_mid = 0.0
+        self._current_high = 0.0
 
     def _create_ui_font(self, size: int):
         font_paths = [
@@ -67,6 +73,12 @@ class Visualizer:
         self.particle_system.clear_all()
         self.is_paused = False
         self.playback_finished = False
+        self._prev_total_energy = 0.0
+        self._pulse_frames_left = 0
+        self._pulse_strength = 0.0
+        self._current_low = 0.0
+        self._current_mid = 0.0
+        self._current_high = 0.0
 
         pygame.mixer.music.load(self._audio_file_path)
         pygame.mixer.music.play()
@@ -81,7 +93,25 @@ class Visualizer:
             if not self.is_paused and not self.playback_finished:
                 frame_index = self._get_current_frame(audio_data)
                 low, mid, high = audio_data.get_normalized_energy(frame_index)
-                self.particle_system.update(low, mid, high)
+                self._current_low, self._current_mid, self._current_high = low, mid, high
+
+                total_energy = 0.5 * low + 0.3 * mid + 0.2 * high
+                onset = max(0.0, total_energy - self._prev_total_energy)
+                self._prev_total_energy = total_energy
+                if onset > 0.18 and total_energy > 0.45:
+                    self._pulse_frames_left = 2
+                    self._pulse_strength = min(1.0, onset * 2.8)
+
+                pulse_boost = 1.0
+                if self._pulse_frames_left > 0:
+                    pulse_boost = 1.0 + 1.2 * self._pulse_strength
+                    self._pulse_frames_left -= 1
+
+                self.particle_system.update(
+                    min(1.0, low * pulse_boost),
+                    min(1.0, mid * pulse_boost),
+                    min(1.0, high * pulse_boost),
+                )
 
             particles = self.particle_system.get_particles_to_render()
             self._render(particles)
@@ -159,6 +189,37 @@ class Visualizer:
 
         if SHOW_INFO and self._last_audio_data is not None:
             self._draw_info()
+
+        self._draw_frequency_hud(self._current_low, self._current_mid, self._current_high)
+        self._draw_pulse_overlay()
+
+    def _draw_frequency_hud(self, low: float, mid: float, high: float):
+        hud_surface = pygame.Surface((WINDOW_WIDTH, WINDOW_HEIGHT), pygame.SRCALPHA)
+        cx, cy = WINDOW_WIDTH // 2, WINDOW_HEIGHT // 2
+
+        rings = [
+            {"energy": low, "base_r": 110, "max_expand": 42, "base_w": 7, "max_w": 10, "color": (255, 120, 80)},
+            {"energy": mid, "base_r": 170, "max_expand": 54, "base_w": 6, "max_w": 9, "color": (70, 190, 255)},
+            {"energy": high, "base_r": 240, "max_expand": 68, "base_w": 5, "max_w": 8, "color": (255, 245, 120)},
+        ]
+
+        for r in rings:
+            e = max(0.0, min(1.0, r["energy"]))
+            radius = int(r["base_r"] + r["max_expand"] * e)
+            width = max(1, int(r["base_w"] + r["max_w"] * e))
+            alpha = int(40 + 170 * e)
+            color = (*r["color"], alpha)
+            pygame.draw.circle(hud_surface, color, (cx, cy), radius, width)
+
+        self.screen.blit(hud_surface, (0, 0))
+
+    def _draw_pulse_overlay(self):
+        if self._pulse_frames_left <= 0:
+            return
+        alpha = int(35 + 70 * self._pulse_strength)
+        pulse_surface = pygame.Surface((WINDOW_WIDTH, WINDOW_HEIGHT), pygame.SRCALPHA)
+        pulse_surface.fill((255, 255, 255, alpha))
+        self.screen.blit(pulse_surface, (0, 0))
 
     def _draw_info(self):
         current_sec = max(0.0, pygame.mixer.music.get_pos() / 1000.0)

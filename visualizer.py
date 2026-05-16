@@ -46,6 +46,7 @@ class Visualizer:
         self._palette_blend_speed = 0.08
         self._current_palette = self._make_palette("cool")
         self._target_palette = self._current_palette
+        self._vignette_surface = self._build_vignette_surface(WINDOW_WIDTH, WINDOW_HEIGHT)
 
     def _create_ui_font(self, size: int):
         font_paths = [
@@ -72,6 +73,22 @@ class Visualizer:
             except Exception:
                 continue
         return pygame.font.Font(None, size)
+
+    def _build_vignette_surface(self, width: int, height: int):
+        surface = pygame.Surface((width, height), pygame.SRCALPHA)
+        cx = width / 2.0
+        cy = height / 2.0
+        max_dist = (cx * cx + cy * cy) ** 0.5
+        step = 10
+        for y in range(0, height, step):
+            for x in range(0, width, step):
+                dx = x - cx
+                dy = y - cy
+                d = (dx * dx + dy * dy) ** 0.5
+                ratio = min(1.0, d / max_dist)
+                alpha = int((ratio**1.8) * 105)
+                pygame.draw.rect(surface, (0, 0, 0, alpha), (x, y, step, step))
+        return surface
 
     def run(self, audio_data, audio_file_path: str):
         self._last_audio_data = audio_data
@@ -243,6 +260,11 @@ class Visualizer:
             self._draw_info()
 
         self._draw_frequency_hud(self._current_low, self._current_mid, self._current_high)
+        self._apply_postprocess()
+
+    def _apply_postprocess(self):
+        if self._vignette_surface is not None:
+            self.screen.blit(self._vignette_surface, (0, 0))
 
     def _draw_frequency_hud(self, low: float, mid: float, high: float):
         p = self._blended_palette()

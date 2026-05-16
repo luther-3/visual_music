@@ -1,5 +1,7 @@
 ﻿"""Pygame visualizer engine."""
 
+from pathlib import Path
+
 import pygame
 
 from config import (
@@ -26,12 +28,38 @@ class Visualizer:
         self.is_paused = False
         self.display_mode = "all"
         self.clock = pygame.time.Clock()
-        self.font = pygame.font.SysFont(None, 24)
+        self.font = self._create_ui_font(24)
         self.contrast_mode = True
 
         self._last_audio_data = None
         self._audio_file_path = None
         self.playback_finished = False
+
+    def _create_ui_font(self, size: int):
+        font_paths = [
+            Path("C:/Windows/Fonts/msyh.ttc"),
+            Path("C:/Windows/Fonts/msyhbd.ttc"),
+            Path("C:/Windows/Fonts/simhei.ttf"),
+            Path("C:/Windows/Fonts/simsun.ttc"),
+            Path("/System/Library/Fonts/PingFang.ttc"),
+            Path("/System/Library/Fonts/STHeiti Medium.ttc"),
+            Path("/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc"),
+            Path("/usr/share/fonts/truetype/wqy/wqy-zenhei.ttc"),
+        ]
+        for p in font_paths:
+            try:
+                if p.exists():
+                    return pygame.font.Font(str(p), size)
+            except Exception:
+                continue
+
+        candidates = ["Microsoft YaHei", "SimHei", "SimSun", "PingFang SC", "Noto Sans CJK SC"]
+        for name in candidates:
+            try:
+                return pygame.font.SysFont(name, size)
+            except Exception:
+                continue
+        return pygame.font.Font(None, size)
 
     def run(self, audio_data, audio_file_path: str):
         self._last_audio_data = audio_data
@@ -66,6 +94,7 @@ class Visualizer:
                 return False
 
             if event.type == pygame.KEYDOWN:
+                key_char = (getattr(event, "unicode", "") or "").lower()
                 if event.key == pygame.K_ESCAPE:
                     return False
                 if event.key == pygame.K_SPACE:
@@ -76,7 +105,7 @@ class Visualizer:
                     else:
                         pygame.mixer.music.pause()
                     self.is_paused = not self.is_paused
-                elif event.key == pygame.K_r:
+                elif event.key == pygame.K_r or key_char == "r":
                     self._restart_playback()
                 elif event.key == pygame.K_1:
                     self.display_mode = "low"
@@ -87,10 +116,10 @@ class Visualizer:
                 elif event.key == pygame.K_3:
                     self.display_mode = "high"
                     self.particle_system.set_display_mode("high")
-                elif event.key == pygame.K_a:
+                elif event.key == pygame.K_a or key_char == "a":
                     self.display_mode = "all"
                     self.particle_system.set_display_mode("all")
-                elif event.key == pygame.K_c:
+                elif event.key == pygame.K_c or key_char == "c":
                     self.contrast_mode = not self.contrast_mode
                     self.particle_system.set_contrast_mode(self.contrast_mode)
 

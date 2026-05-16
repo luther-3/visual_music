@@ -93,6 +93,7 @@ class AudioProcessor:
             mid_energy = AudioProcessor._calculate_band_energy(magnitude, MID_FREQ_RANGE)
             high_energy = AudioProcessor._calculate_band_energy(magnitude, HIGH_FREQ_RANGE)
             AudioProcessor._export_band_energy_timeseries(file_path, low_energy, mid_energy, high_energy)
+            AudioProcessor._export_representative_phase_timeseries(file_path, stft_matrix)
 
             low_log_energy = np.log10(low_energy + 1)
             mid_log_energy = np.log10(mid_energy + 1)
@@ -175,12 +176,74 @@ class AudioProcessor:
         frame_idx = np.arange(len(low_energy))
 
         plt.figure(figsize=(12, 5))
-        plt.plot(frame_idx, low_energy, label="Low Band Energy (20-250Hz)", color="#ff7043", linewidth=1.2)
-        plt.plot(frame_idx, mid_energy, label="Mid Band Energy (250-4000Hz)", color="#29b6f6", linewidth=1.2)
-        plt.plot(frame_idx, high_energy, label="High Band Energy (4000-11025Hz)", color="#ffee58", linewidth=1.2)
-        plt.title(f"{audio_name} - Band Energy Time Series")
+        plt.plot(
+            frame_idx,
+            low_energy,
+            label="Low Band Amplitude (sum, 20-250Hz)",
+            color="#ff7043",
+            linewidth=1.2,
+        )
+        plt.plot(
+            frame_idx,
+            mid_energy,
+            label="Mid Band Amplitude (sum, 250-4000Hz)",
+            color="#29b6f6",
+            linewidth=1.2,
+        )
+        plt.plot(
+            frame_idx,
+            high_energy,
+            label="High Band Amplitude (sum, 4000-11025Hz)",
+            color="#ffee58",
+            linewidth=1.2,
+        )
+        plt.title(f"{audio_name} - Band Amplitude Time Series")
         plt.xlabel("Time Frame")
-        plt.ylabel("Energy")
+        plt.ylabel("Amplitude (band-summed)")
+        plt.legend(loc="upper right")
+        plt.grid(alpha=0.25)
+        plt.tight_layout()
+        plt.savefig(out_path, dpi=200)
+        plt.close()
+
+    @staticmethod
+    def _export_representative_phase_timeseries(file_path: str, stft_matrix: np.ndarray):
+        out_dir = Path("visual_spectrum")
+        out_dir.mkdir(parents=True, exist_ok=True)
+
+        audio_name = Path(file_path).stem
+        out_path = out_dir / f"{audio_name}_representative_phase_timeseries.png"
+        frame_idx = np.arange(stft_matrix.shape[1])
+
+        rep_freqs = {
+            "Low ~80Hz": 80,
+            "Mid ~1000Hz": 1000,
+            "High ~8000Hz": 8000,
+        }
+        colors = {
+            "Low ~80Hz": "#ff7043",
+            "Mid ~1000Hz": "#29b6f6",
+            "High ~8000Hz": "#ffee58",
+        }
+
+        plt.figure(figsize=(12, 5))
+        for label, freq in rep_freqs.items():
+            center_bin = freq_to_bin(freq, SAMPLE_RATE, N_FFT)
+            start_bin = max(0, center_bin - 3)
+            end_bin = min(stft_matrix.shape[0], center_bin + 4)
+            local_spec = stft_matrix[start_bin:end_bin, :]
+
+            # Magnitude-weighted complex averaging for stable representative phase.
+            weights = np.abs(local_spec)
+            denom = np.sum(weights, axis=0) + 1e-12
+            weighted_complex = np.sum(local_spec * weights, axis=0) / denom
+            phase_series = np.unwrap(np.angle(weighted_complex))
+
+            plt.plot(frame_idx, phase_series, label=label, color=colors[label], linewidth=1.2)
+
+        plt.title(f"{audio_name} - Representative Phase Time Series (Unwrapped)")
+        plt.xlabel("Time Frame")
+        plt.ylabel("Phase (rad)")
         plt.legend(loc="upper right")
         plt.grid(alpha=0.25)
         plt.tight_layout()

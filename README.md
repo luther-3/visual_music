@@ -13,7 +13,7 @@
 - 实时音频播放与视觉效果同步
 - 自动兼容不同采样率音频（运行时重采样到 22050Hz）
 - MP3 读取失败时自动尝试转换为同名 WAV（依赖 ffmpeg）
-- 自动导出三频段能量时序图 PNG 到 `visual_spectrum/`
+- 自动导出分析图 PNG 到 `visual_spectrum/`
 
 ## 安装依赖
 
@@ -50,8 +50,10 @@ visual_music/
 - 使用 soundfile 加载音频文件（MP3 失败时自动 ffmpeg 转 WAV 兜底）
 - 应用短时傅立叶变换（STFT）提取频谱
 - 将频谱划分为三个频段并计算能量
-- 自动保存三频段能量时序图：
+- 自动保存三频段幅度时序图（频段内幅度求和）：
   - `{歌曲名}_band_energy_timeseries.png`
+- 自动保存代表频率相位时序图（低/中/高，邻域平均 + 相位展开）：
+  - `{歌曲名}_representative_phase_timeseries.png`
 
 ### 粒子系统
 - 每个频段对应一个粒子发射器

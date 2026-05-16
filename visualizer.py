@@ -48,7 +48,7 @@ class Visualizer:
         self._target_palette = self._current_palette
         self._vignette_surface = self._build_vignette_surface(WINDOW_WIDTH, WINDOW_HEIGHT)
         self._bloom_scale = 0.5
-        self._bloom_alpha = 72
+        self._bloom_alpha = 24
         self._bloom_small_size = (
             max(1, int(WINDOW_WIDTH * self._bloom_scale)),
             max(1, int(WINDOW_HEIGHT * self._bloom_scale)),
@@ -271,11 +271,11 @@ class Visualizer:
         self._apply_postprocess()
 
     def _apply_postprocess(self):
-        # Lightweight bloom: downsample + upsample + additive blend.
+        # Lightweight bloom: downsample + upsample + soft alpha blend.
         pygame.transform.smoothscale(self.screen, self._bloom_small_size, self._bloom_small_surface)
         pygame.transform.smoothscale(self._bloom_small_surface, (WINDOW_WIDTH, WINDOW_HEIGHT), self._bloom_full_surface)
         self._bloom_full_surface.set_alpha(self._bloom_alpha)
-        self.screen.blit(self._bloom_full_surface, (0, 0), special_flags=pygame.BLEND_RGB_ADD)
+        self.screen.blit(self._bloom_full_surface, (0, 0))
 
         if self._vignette_surface is not None:
             self.screen.blit(self._vignette_surface, (0, 0))

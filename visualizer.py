@@ -43,7 +43,7 @@ class Visualizer:
         self._palette_check_frames = 0
         self._palette_hold_frames = 0
         self._palette_blend_t = 1.0
-        self._palette_blend_speed = 0.035
+        self._palette_blend_speed = 0.08
         self._current_palette = self._make_palette("cool")
         self._target_palette = self._current_palette
 
@@ -89,6 +89,7 @@ class Visualizer:
         self._palette_check_frames = 0
         self._palette_hold_frames = 0
         self._palette_blend_t = 1.0
+        self._palette_blend_speed = 0.08
         self._current_palette = self._make_palette("cool")
         self._target_palette = self._current_palette
 
@@ -278,7 +279,7 @@ class Visualizer:
         if self._palette_hold_frames > 0:
             self._palette_hold_frames -= 1
             return
-        if self._palette_check_frames < 90 or len(self._energy_history) < 120:
+        if self._palette_check_frames < 60 or len(self._energy_history) < 120:
             return
         self._palette_check_frames = 0
 
@@ -287,9 +288,9 @@ class Visualizer:
         high_avg = sum(x[2] for x in self._energy_history[-180:]) / 180.0
         total = 0.5 * low_avg + 0.3 * mid_avg + 0.2 * high_avg
 
-        if total > 0.72 or low_avg > 0.78:
+        if total > 0.58 or low_avg > 0.63:
             name = "warm"
-        elif high_avg > 0.72 and low_avg < 0.55:
+        elif high_avg > 0.6 and low_avg < 0.5:
             name = "electric"
         else:
             name = "cool"
@@ -299,37 +300,37 @@ class Visualizer:
             self._current_palette = self._blended_palette()
             self._target_palette = next_palette
             self._palette_blend_t = 0.0
-            self._palette_hold_frames = 360
+            self._palette_hold_frames = 180
 
     def _make_palette(self, name: str):
         if name == "warm":
             return {
                 "name": "warm",
-                "bg": (18, 10, 10),
-                "hud_low": (255, 145, 80),
-                "hud_mid": (255, 190, 110),
-                "hud_high": (255, 240, 170),
-                "mul_low": (1.12, 1.0, 0.9),
-                "mul_mid": (1.1, 1.03, 0.9),
-                "mul_high": (1.0, 1.0, 0.92),
+                "bg": (30, 8, 6),
+                "hud_low": (255, 95, 45),
+                "hud_mid": (255, 150, 60),
+                "hud_high": (255, 210, 105),
+                "mul_low": (1.25, 0.9, 0.75),
+                "mul_mid": (1.2, 0.92, 0.78),
+                "mul_high": (1.08, 0.95, 0.85),
             }
         if name == "electric":
             return {
                 "name": "electric",
-                "bg": (8, 12, 24),
-                "hud_low": (110, 180, 255),
-                "hud_mid": (90, 255, 220),
-                "hud_high": (210, 255, 255),
-                "mul_low": (0.92, 1.0, 1.15),
-                "mul_mid": (0.88, 1.06, 1.14),
-                "mul_high": (0.9, 1.1, 1.2),
+                "bg": (4, 14, 34),
+                "hud_low": (70, 150, 255),
+                "hud_mid": (40, 255, 230),
+                "hud_high": (150, 255, 255),
+                "mul_low": (0.72, 0.95, 1.35),
+                "mul_mid": (0.68, 1.05, 1.4),
+                "mul_high": (0.72, 1.12, 1.52),
             }
         return {
             "name": "cool",
-            "bg": BACKGROUND_COLOR,
-            "hud_low": (255, 120, 80),
-            "hud_mid": (70, 190, 255),
-            "hud_high": (255, 245, 120),
+            "bg": (8, 12, 22),
+            "hud_low": (220, 100, 140),
+            "hud_mid": (80, 160, 255),
+            "hud_high": (190, 225, 255),
             "mul_low": (1.0, 1.0, 1.0),
             "mul_mid": (1.0, 1.0, 1.0),
             "mul_high": (1.0, 1.0, 1.0),

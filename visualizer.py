@@ -191,7 +191,6 @@ class Visualizer:
             self._draw_info()
 
         self._draw_frequency_hud(self._current_low, self._current_mid, self._current_high)
-        self._draw_pulse_overlay()
 
     def _draw_frequency_hud(self, low: float, mid: float, high: float):
         hud_surface = pygame.Surface((WINDOW_WIDTH, WINDOW_HEIGHT), pygame.SRCALPHA)
@@ -212,14 +211,6 @@ class Visualizer:
             pygame.draw.circle(hud_surface, color, (cx, cy), radius, width)
 
         self.screen.blit(hud_surface, (0, 0))
-
-    def _draw_pulse_overlay(self):
-        if self._pulse_frames_left <= 0:
-            return
-        alpha = int(35 + 70 * self._pulse_strength)
-        pulse_surface = pygame.Surface((WINDOW_WIDTH, WINDOW_HEIGHT), pygame.SRCALPHA)
-        pulse_surface.fill((255, 255, 255, alpha))
-        self.screen.blit(pulse_surface, (0, 0))
 
     def _draw_info(self):
         current_sec = max(0.0, pygame.mixer.music.get_pos() / 1000.0)

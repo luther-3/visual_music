@@ -86,4 +86,10 @@ visual_music/
 
 ## 许可
 
-MIT License
+本版本的项目原创代码采用 **GNU Affero General Public License v3.0 only（AGPL-3.0-only）**，完整条款见 [LICENSE](LICENSE)。
+
+允许商业使用；分发受许可覆盖的软件时，须按条款提供相应源码。如果修改版通过网络与用户交互，也须向这些用户提供获得相应源码的机会。仅在内部离线运行，不会自动要求向公众公开全部代码。
+
+此前 README 声明 MIT 的历史版本不因本次调整而自动撤销既有授权；本声明适用于本次许可调整后的版本。第三方依赖及用户选择的音频保留各自许可，不属于本项目的重新授权范围。
+
+Copyright (C) 2026 luther-3 and contributors.
